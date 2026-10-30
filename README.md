@@ -1,4 +1,4 @@
-# claude-factory
+# glados
 
 A personal software factory built on Claude Code. One lead agent per job runs the whole recipe itself (triage, spec, code, ship) and only hands work to a sub-agent when a separate context pays for itself: an independent review, a live test, a hard call. A Postgres event log keeps track of where every job stands, a scheduler polls GitHub, deploys and Bugsnag, and a TUI/web dash shows what needs a human.
 
