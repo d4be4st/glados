@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script>
+try { document.documentElement.dataset.theme = localStorage.getItem('f2theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'); } catch { document.documentElement.dataset.theme = 'dark'; }
+</script>
+<style>
+:root{
+  --bg:#11111b; --top:#181825e6; --card:#1e1e2e; --card-2:#313244; --ink:#cdd6f4; --ink-2:#bac2de; --mute:#9399b2; --line:#313244;
+  --accent:#cba6f7; --run:#89b4fa; --ok:#a6e3a1; --warn:#f9e2af; --bad:#f38ba8; --info:#b4befe; color-scheme:dark;
+  --run-ink:var(--run); --ok-ink:var(--ok); --warn-ink:var(--warn); --bad-ink:var(--bad);
+  --font:"Inter","SF Pro Text","Segoe UI",system-ui,sans-serif; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace; --r:10px;
+}
+:root[data-theme=light]{
+  --bg:#dce0e8; --top:#e6e9efee; --card:#eff1f5; --card-2:#ccd0da; --ink:#303446; --ink-2:#4c4f69; --mute:#5a5d73; --line:#ccd0da;
+  --accent:#8839ef; --run:#1e66f5; --ok:#40a02b; --warn:#df8e1d; --bad:#d20f39; --info:#7287fd; color-scheme:light;
+  --run-ink:#0f3f9e; --ok-ink:#1f5e12; --warn-ink:#5a3a00; --bad-ink:#980a2a;
+}
+#theme{all:unset;cursor:pointer;margin-left:auto;display:flex;padding:6px 8px;border-radius:5px;background:var(--card-2);color:var(--ink)}
+#theme:hover{background:color-mix(in srgb,var(--accent) 30%,var(--card-2))}
+*{box-sizing:border-box;margin:0;padding:0}
+body{display:flex;flex-direction:column;height:100vh;background:var(--bg);color:var(--ink-2);font:13px/1.45 var(--font)}
+a{color:var(--ink);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 50%,transparent);text-underline-offset:2px;overflow-wrap:anywhere}
+.top{display:flex;align-items:center;gap:16px;padding:9px 20px;background:var(--top);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font:800 17px/1 var(--font);letter-spacing:.14em;color:var(--ink)}
+.brand img{width:22px;height:22px;image-rendering:pixelated}
+.live{font:600 12px var(--mono);color:var(--mute)}
+.live b{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px}
+.live.off b{background:var(--bad)}
+.live.off{color:var(--bad-ink)}
+.tabs{display:flex;gap:2px;overflow-x:auto;min-width:0;max-width:100%}
+.tabs button{white-space:nowrap}
+.tabs .c.hot{color:#11111b;background:var(--warn);padding:0 6px;border-radius:8px}
+.tabs button{all:unset;cursor:pointer;padding:6px 11px;border-radius:5px;font:700 13px var(--font);color:var(--mute)}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{color:var(--ink);background:var(--card);box-shadow:inset 0 -2px 0 var(--accent)}
+.tabs .c{font:600 11px var(--mono);margin-left:4px;color:var(--mute)}
+main{flex:1;overflow:auto;padding:18px 20px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px}
+.idle{margin-top:10px}
+.col h3{font:700 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;overflow-x:auto}
+.card h4 a{color:inherit;text-decoration:none}
+.card h4{font:700 13px var(--font);color:var(--ink);margin-bottom:3px;overflow-wrap:anywhere}
+.meta{font:12px var(--mono);color:var(--mute)}
+.bar{height:5px;border-radius:3px;background:var(--card-2);margin-top:7px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--run)}
+.tag{display:inline-block;font:700 10px var(--mono);padding:1px 6px;border-radius:4px;background:var(--card-2);color:var(--ink-2);margin-right:4px;text-transform:uppercase}
+.tag.bad{background:color-mix(in srgb,var(--bad) 22%,transparent);color:var(--bad-ink)}
+.tag.ok{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok-ink)}
+.tag.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn-ink)}
+.tag.run{background:color-mix(in srgb,var(--run) 22%,transparent);color:var(--run-ink)}
+pre{white-space:pre-wrap;font:12px/1.45 var(--mono);color:var(--ink-2);background:var(--bg);border-radius:6px;padding:8px 10px;margin-top:6px;max-height:420px;overflow:auto}
+table{border-collapse:collapse;width:100%}
+td,th{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top;font-size:12px;font-variant-numeric:tabular-nums}
+th{font:700 11px var(--mono);color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+h2{font:700 13px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin:4px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px}
+input{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:6px 9px;font:12px var(--mono);width:280px;margin-bottom:10px}
+.empty{color:var(--mute);font-style:italic}
+.acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;min-height:28px;font:700 11px var(--mono);padding:0 10px;border-radius:5px;background:var(--card-2);color:var(--ink)}
+.btn:hover{background:color-mix(in srgb,var(--accent) 30%,var(--card-2))}
+.btn.ok{color:var(--ok-ink)}.btn.bad{color:var(--bad-ink)}
+.btn.on{box-shadow:inset 0 -2px 0 var(--accent)}
+.btn[disabled]{opacity:.5;cursor:default}
+:focus-visible,#theme:focus-visible,.tabs button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (pointer:coarse){.btn,.tabs button,#theme{min-height:44px}}
+.danger{border-top:1px solid var(--line);padding-top:12px}
+#toast{position:fixed;right:16px;bottom:16px;max-width:min(520px,calc(100vw - 32px));background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;font:12px var(--mono);color:var(--ink);box-shadow:0 4px 12px #0006;display:none;white-space:pre-wrap}
+#toast.bad{border-color:var(--bad);color:var(--bad)}
+.card[data-job],tr[data-job]{cursor:pointer}
+tr[data-job]:hover td{background:var(--card-2)}
+.card[data-job]:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.chip{font:600 10px var(--mono);padding:0 5px;border-radius:3px;border:1px solid var(--line);color:var(--mute);max-width:24ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip.done{background:color-mix(in srgb,var(--ok) 22%,transparent);color:var(--ok-ink)}
+.chip.now{background:color-mix(in srgb,var(--run) 22%,transparent);color:var(--run-ink)}
+.chip.warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn-ink)}
+.chip.bad{background:color-mix(in srgb,var(--bad) 22%,transparent);color:var(--bad-ink)}
+.chip.dropped{text-decoration:line-through}
+#detail .plan tr.planned td{color:var(--mute)}
+#detail .plan tr.dropped td{color:var(--mute);text-decoration:line-through}
+#detail .plan td:first-child{color:var(--mute);font-family:var(--mono)}
+#detail{position:fixed;inset:0;background:#0009;display:none;align-items:flex-start;justify-content:center;padding:4vh 2vw;z-index:50}
+#detail.open{display:flex}
+#detail .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);width:min(960px,96vw);max-height:92vh;overflow:auto;padding:16px 20px;box-shadow:0 8px 30px #0008}
+#detail.wide .box{width:96vw}
+#detail .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:-16px;background:var(--card);padding:6px 0 10px;z-index:1}
+#detail .head h3{font:700 16px var(--font);color:var(--ink);flex:1;overflow-wrap:anywhere}
+#detail section{margin-top:14px}
+#detail .ledger td:first-child{white-space:nowrap;color:var(--mute);font-family:var(--mono)}
+#detail .ledger td:nth-child(2){white-space:nowrap}
+#detail .ledger pre{margin:0;max-height:none}
+.files{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 14px}
+.files a{font:12px var(--mono)}
+details>summary{cursor:pointer;list-style:none}
+details>summary h2{display:inline}
+details>summary::before{content:"▸ ";color:var(--mute)}
+details[open]>summary::before{content:"▾ "}
+.rowfiles{margin-top:6px}
+details.lbl>summary{font:12px var(--mono);color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46ch}
+details.lbl[open]>summary{white-space:normal;max-width:none}
+.plan td:nth-child(3){white-space:nowrap}
+.plan td:nth-child(3) .meta{white-space:nowrap}
+#lightbox{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:99;cursor:zoom-out}
+#lightbox img{max-width:94vw;max-height:94vh;border-radius:var(--r)}
+.card[data-proposal]{cursor:pointer}
+.card[data-proposal]:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+#pmodal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;z-index:98;padding:20px}
+.pbox{background:var(--card);border:1px solid var(--line);border-radius:var(--r);width:min(980px,100%);max-height:100%;display:flex;flex-direction:column;padding:14px 18px;gap:10px}
+.phead{display:flex;align-items:center;gap:12px}
+.phead h3{font:700 15px var(--font);color:var(--ink)}
+.pbody{overflow:auto;display:flex;flex-direction:column;gap:12px}
+.pkv>b{display:block;font:700 11px var(--mono);color:var(--accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.pkv p{font-size:13px;color:var(--ink-2);margin:0}
+.pkv code,.card code{font:12px var(--mono);background:var(--card-2);padding:0 4px;border-radius:3px}
+.diff{font:12px/1.5 var(--mono);background:var(--bg);border-radius:6px;padding:6px 0;overflow-x:auto}
+.dl{white-space:pre-wrap;padding:0 12px;overflow-wrap:anywhere}
+.dl.add{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok-ink)}
+.dl.del{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad-ink)}
+.dl.hunk{color:var(--info);margin-top:6px}
+.dl.file{font-weight:700;color:var(--ink)}
+.dl.ctx{color:var(--ink-2)}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:8px}
+.shots a{display:flex;flex-direction:column;gap:4px}
+.shots img{width:100%;border-radius:var(--r);border:1px solid #8884}
+.shots span{font:11px var(--mono)}
+.viewer{background:var(--bg);border-radius:var(--r);padding:12px 16px;margin-top:8px}
+.md h1,.md h2,.md h3,.md h4{font:700 14px var(--font);color:var(--ink);margin:12px 0 6px;text-transform:none;letter-spacing:0}
+.md h1{font-size:17px}.md h2{font-size:15px}
+.md p,.md li{font-size:13px;margin:4px 0;color:var(--ink-2)}
+.md ul,.md ol{padding-left:20px}
+.md table{margin:8px 0}.md td,.md th{text-transform:none;letter-spacing:0;font:12px var(--font)}
+.md th{font-weight:700;color:var(--ink)}
+.md code{font:12px var(--mono);background:var(--card-2);padding:0 4px;border-radius:3px}
+.md pre code{background:none;padding:0}
+@media (max-width:700px){main{padding:12px 16px}.grid{grid-template-columns:1fr}#detail-wide{display:none}}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1 class="brand"><img src="/favicon.svg" alt="">FACTORY</h1>
+  <div class="live" id="live"><b></b><span>connecting</span></div>
+  <nav class="tabs" id="tabs"></nav>
+  <button id="theme" title="Toggle Mocha / Latte" aria-label="Toggle light or dark theme"></button>
+</div>
+<main id="main"></main>
+<div id="toast" role="status"></div>
+<div id="detail" role="dialog" aria-modal="true" aria-labelledby="detail-title"><div class="box" id="detail-box"></div></div>
+<script>
+const TABS = ['Board', 'Projects', 'Plate', 'PRs', 'Jobs', 'Parked', 'Schedules', 'Numbers', 'Events'];
+const PHASES = ['plan', 'build', 'review', 'test', 'ship', 'pr'];
+let S = null;
+let tab = (() => { try { const t = localStorage.getItem('f2tab'); return TABS.includes(t) ? t : 'Board'; } catch { return 'Board'; } })();
+let filter = '';
+let jobsFilter = (() => { try { return localStorage.getItem('f2jobs') || 'active'; } catch { return 'active'; } })();
+let prsFilter = (() => { try { return localStorage.getItem('f2prs') || 'open'; } catch { return 'open'; } })();
+let prsRepo = (() => { try { return localStorage.getItem('f2prsrepo') || ''; } catch { return ''; } })();
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-jf], [data-pf]');
+  if (!b) return;
+  if (b.dataset.jf) jobsFilter = b.dataset.jf;
+  if (b.dataset.pf) prsFilter = b.dataset.pf;
+  try { localStorage.setItem('f2jobs', jobsFilter); localStorage.setItem('f2prs', prsFilter); } catch {}
+  render();
+});
+document.addEventListener('change', e => {
+  if (e.target.id !== 'prrepo') return;
+  prsRepo = e.target.value;
+  try { localStorage.setItem('f2prsrepo', prsRepo); } catch {}
+  render();
+});
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const link = s => esc(s).replace(/https?:\/\/[^\s)<]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`)
+  .replace(/(^|[\s(`])(\/[^\s<>`'"]+\.(?:md|html?|txt|json|log|png|jpe?g|gif|svg|webp))(?=[\s.,;:)`]|$)/gi, (m, pre, p) => `${pre}<a href="#" data-view="${p}">${p}</a>`);
+const ago = ms => { const s = Math.max(0, (Date.now() - ms) / 1000); return s < 60 ? `${s | 0}s` : s < 3600 ? `${s / 60 | 0}m` : s < 86400 ? `${s / 3600 | 0}h` : `${s / 86400 | 0}d`; };
+const when = ms => ms ? new Date(ms).toLocaleString('sv').slice(5, 16) : '';
+const ciTag = c => c ? `<span class="tag ${c === 'passed' ? 'ok' : c === 'failed' ? 'bad' : 'run'}">CI ${esc(c)}</span>` : '';
+const rev = s => esc((s ?? '').toLowerCase().replace(/_/g, ' '));
+const shownJobs = () => S.jobs.filter(j => jobsFilter === 'all' || (jobsFilter === 'closed' ? !['active', 'parked'].includes(j.workspace) : j.workspace === jobsFilter));
+const PR_FILTERS = { open: ['OPEN'], merged: ['MERGED'], closed: ['CLOSED'], unregistered: ['unregistered'], all: ['OPEN', 'MERGED', 'CLOSED', 'unregistered'] };
+const shownPrs = () => S.prs.filter(p => (PR_FILTERS[prsFilter] ?? PR_FILTERS.open).includes(p.state) && (!prsRepo || p.repo === prsRepo));
+const stalled = j => j.status === 'running' && j.type !== 'project' && j.phase !== 'watch' && j.lead?.status === 'idle' && !j.lead.closed_at && !j.progress.gate
+  && !j.plan.some(r => r.status === 'running') && !S.prs.some(p => p.job === j.slug && p.soak.some(t => !t.fired_at));
+const waiting = () => [...S.attention, ...S.jobs.filter(j => stalled(j) && !S.attention.some(a => a.slug === j.slug)).map(j => ({ slug: j.slug, why: 'stalled', step: j.progress.step }))];
+const soaking = () => S.jobs.filter(j => j.status === 'running' && j.type !== 'project' && j.phase === 'watch' && !S.attention.some(a => a.slug === j.slug));
+const soakResult = (p, t) => t.fired_at && p.results.findLast(r => r.data.stage === t.stage && r.data.checkpoint === t.checkpoint)?.type;
+const soakNow = j => {
+  const ts = S.prs.filter(p => p.job === j.slug && p.state === 'MERGED').flatMap(p => p.soak.map(t => ({ ...t, result: soakResult(p, t)?.slice(5) })));
+  const t = ts.filter(t => !t.fired_at).sort((a, b) => a.at - b.at)[0] ?? ts.sort((a, b) => a.fired_at - b.fired_at).at(-1);
+  if (!t) return '<span class="tag">waiting for latest</span>';
+  return `<span class="tag ${{ clean: 'ok', signal: 'bad', error: 'warn' }[t.result] ?? ''}">${esc(t.stage)} +${esc(t.checkpoint)}</span>${t.fired_at ? esc(t.result ?? 'ran') : `due ${when(t.at)}`}`;
+};
+const counts = () => ({
+  Board: S.jobs.filter(j => j.status === 'running' && j.type !== 'project' && j.phase !== 'watch').length,
+  Projects: S.jobs.filter(j => j.type === 'project' && j.status !== 'done').length,
+  PRs: shownPrs().length,
+  Jobs: shownJobs().length, Parked: S.parked.length, Schedules: S.schedules.length, Events: '',
+});
+
+function setTab(t) {
+  tab = t;
+  try { localStorage.setItem('f2tab', tab); } catch {}
+  render();
+}
+
+function nav() {
+  const c = counts();
+  const hot = { Board: waiting().length, Plate: S.plate.length + S.proposals.length };
+  document.title = hot.Board + hot.Plate ? `(${hot.Board + hot.Plate}) Factory` : 'Factory';
+  const html = TABS.map(t => `<button class="${t === tab ? 'on' : ''}" data-t="${t}"${t === tab ? ' aria-current="page"' : ''}>${t}${hot[t] ? `<span class="c hot">${hot[t]}</span>` : ''}<span class="c">${c[t] ?? ''}</span></button>`).join('');
+  if (html === nav.last) return;
+  document.getElementById('tabs').innerHTML = nav.last = html;
+  for (const b of document.querySelectorAll('#tabs button')) b.onclick = () => setTab(b.dataset.t);
+}
+
+const themeBtn = document.getElementById('theme');
+const ICON = d => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const SUN = ICON('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>');
+const MOON = ICON('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>');
+const paintTheme = () => { themeBtn.innerHTML = document.documentElement.dataset.theme === 'light' ? SUN : MOON; };
+themeBtn.onclick = () => {
+  const t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem('f2theme', t); } catch {}
+  paintTheme();
+};
+paintTheme();
+
+const btn = (path, label, tone = '', confirm = '') => `<button class="btn ${tone}" data-act="${esc(path)}" data-confirm="${esc(confirm)}">${esc(label)}</button>`;
+const closeBtn = slug => btn(`/workspace/${slug}/done`, 'Close workspace', 'bad', `Close ${slug}? It tears down once its lead's turn ends; refused with uncommitted or unpushed work.`);
+const runBtn = name => btn(`/schedule/${name}/run`, 'Run now', 'ok', `Run schedule ${name} now? Its failed card clears; a new one appears if it fails again.`);
+const herdrBtn =j => j.workspace === 'active' ? btn(`/job/${j.slug}/focus`, 'herdr') : '';
+const jobLink = slug =>`<a href="#job/${encodeURIComponent(slug)}">${esc(slug)}</a>`;
+
+function toast(text, bad) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.className = bad ? 'bad' : '';
+  t.setAttribute('role', bad ? 'alert' : 'status');
+  t.style.display = 'block';
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => { t.style.display = 'none'; }, bad ? 8000 : 3000);
+}
+
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]');
+  if (!b || b.disabled) return;
+  if (b.dataset.confirm && !window.confirm(b.dataset.confirm)) return;
+  b.disabled = true;
+  try {
+    const r = await fetch(b.dataset.act, { method: 'POST', headers: { 'X-Factory': '1' } });
+    toast(await r.text(), !r.ok);
+    if (r.ok) document.getElementById('pmodal')?.remove();
+  } catch (err) {
+    toast(err.message, true);
+  }
+  b.disabled = false;
+});
+
+const rowName = r => r.element === 'gate' ? `gate:${r.label}` : r.element;
+const rowStatus = r => r.element === 'gate' && r.status === 'failed' ? 'declined' : r.status;
+const ROW_TONE = { done: 'done', running: 'now', failed: 'bad', declined: 'warn', dropped: 'dropped' };
+const ROW_TAG = { done: 'ok', running: 'run', failed: 'bad', declined: 'warn' };
+
+function chips(j) {
+  return `<div class="chips">${j.plan.map(r => `<span class="chip ${ROW_TONE[rowStatus(r)] ?? ''}" title="${esc(`${rowName(r)} · ${rowStatus(r)}${r.label && r.element !== 'gate' ? ` · ${r.label}` : ''}`)}">${esc(rowName(r))}</span>`).join('')}</div>`;
+}
+
+function planTable(j) {
+  return `<section>${fold('ledger', `<h2>Ledger · ${j.plan.filter(r => ['done', 'skipped'].includes(r.status)).length}/${j.plan.filter(r => r.status !== 'dropped').length} done</h2>`, `<table class="plan"><tr><th>Row</th><th>Step</th><th>Status</th><th>Worker</th><th>Weight</th><th>What happened</th></tr>${j.plan.map((r, n) => `<tr class="${esc(r.status)}"><td>${n + 1}</td><td>${esc(rowName(r))}${r.label && r.element !== 'gate' ? (r.label.length > 70 ? `<details class="lbl" data-k="lbl${n}"${openKeys.has(`lbl${n}`) ? ' open' : ''}><summary>${esc(r.label)}</summary></details>` : `<div class="meta">${esc(r.label)}</div>`) : ''}</td><td><span class="tag ${ROW_TAG[rowStatus(r)] ?? ''}">${esc(rowStatus(r))}</span>${r.updated_at && r.status !== 'planned' ? `<div class="meta">${when(r.updated_at)}</div>` : ''}</td><td>${esc(r.worker ?? '')}</td><td>${esc(r.weight)}</td><td>${r.note ? `<pre>${link(r.note)}</pre>` : ''}${rowFiles(j, r)}</td></tr>`).join('')}</table>`)}</section>`;
+}
+
+function nowOf(j) {
+  const r = j.plan.find(x => x.status === 'running');
+  return r ? `${rowName(r)}${r.label && r.element !== 'gate' ? ` · ${r.label}` : ''}` : j.progress.step;
+}
+
+const jobOf = subject => S.jobs.some(j => j.slug === subject) ? subject : S.prs.find(p => p.url === subject)?.job;
+
+function needs(j) {
+  const urls = j.prs.map(p => p.url);
+  return [
+    ...S.attention.filter(a => a.slug === j.slug).map(a => a.why),
+    ...S.plate.filter(p => p.subject === j.slug || urls.includes(p.subject)).map(p => p.kind),
+    ...(j.status !== 'done' && j.lead?.closed_at ? ['lead missing'] : []),
+    ...(stalled(j) ? ['stalled'] : []),
+  ];
+}
+
+function projectTag(j) {
+  const kids = S.jobs.filter(x => x.parent === j.slug).length;
+  return j.type === 'project' ? `<span class="tag">project${kids ? ` · ${kids} jobs` : ''}</span>` : '';
+}
+
+function jobCard(j) {
+  return `<div class="card" data-job="${esc(j.slug)}"><h4>${jobLink(j.slug)} ${herdrBtn(j)}</h4>
+    ${j.parent ? `<div class="meta">↳ ${esc(j.parent)}</div>` : ''}
+    <div class="meta">${projectTag(j)}<span class="tag">${esc(j.machine)}</span> ${esc(j.progress.wait ?? nowOf(j))}</div>
+    ${j.phase === 'pr' ? j.prs.filter(p => p.state === 'OPEN').map(p => `<div class="meta">${p.draft ? 'draft' : 'ready'} ${ciTag(p.ci)} ${rev(p.review)}</div>`).join('') : ''}
+    ${needs(j).map(n => `<span class="tag warn">${esc(n)}</span>`).join('')}</div>`;
+}
+
+const INLINE = /\.(md|txt|json|log)$/i;
+const IMAGE = /\.(png|jpe?g|gif|svg|webp)$/i;
+const fileUrl = f => `/file?path=${encodeURIComponent(f)}`;
+
+const openKeys = new Set();
+const fold = (key, summary, body) => `<details data-k="${esc(key)}"${openKeys.has(key) ? ' open' : ''}><summary>${summary}</summary>${body}</details>`;
+const fileKey = f => { const [dir, ...rest] = f.name.split('/'); const n = rest.pop()?.match(/^(?:criteria-)?t(\d+)/i)?.[1]; return n && `${dir}/t${n}`.toLowerCase(); };
+const noteKeys = r => new Set([...(r.note ?? '').matchAll(/([\w.-]+\/t\d+)/gi)].map(m => m[1].toLowerCase()));
+
+function fileBlock(fs) {
+  const shots = fs.filter(f => IMAGE.test(f.path));
+  const rest = fs.filter(f => !IMAGE.test(f.path));
+  return `${shots.length ? `<div class="shots">${shots.map(f => `<a href="${fileUrl(f.path)}" data-img="${esc(fileUrl(f.path))}"><img src="${fileUrl(f.path)}" loading="lazy" alt=""><span>${esc(f.name)}</span></a>`).join('')}</div>` : ''}<div class="files">${rest.map(f => INLINE.test(f.path)
+    ? `<a href="#" data-view="${esc(f.path)}">${esc(f.name)}</a>`
+    : `<a href="${fileUrl(f.path)}" target="_blank" rel="noopener">${esc(f.name)} ↗</a>`).join('')}</div>`;
+}
+
+function rowFiles(j, r) {
+  const keys = noteKeys(r);
+  const fs = j.files.filter(f => keys.has(fileKey(f)));
+  if (!fs.length) return '';
+  const [first, ...more] = fs;
+  return `<div class="rowfiles">${fileBlock([first])}${more.length ? fold(`row${r.id}`, `+${more.length} more`, fileBlock(more)) : ''}</div>`;
+}
+
+function fileList(j) {
+  const keys = new Set(j.plan.flatMap(r => [...noteKeys(r)]));
+  const files = j.files.filter(f => !keys.has(fileKey(f)));
+  if (!files.length) return '';
+  const groups = { criteria: 'Acceptance criteria', spec: 'Spec', gates: 'Gates and ledger (v1)', report: 'Stage reports', evidence: 'Evidence' };
+  return `<section>${fold('files', `<h2>Other files · ${files.length}</h2>`, Object.entries(groups).map(([k, label]) => {
+    const fs = files.filter(f => f.kind === k);
+    return fs.length ? `<div class="meta" style="margin:8px 0 4px">${label}</div>${fileBlock(fs)}` : '';
+  }).join(''))}</section>`;
+}
+
+let viewer = null;
+
+function inline(s) {
+  return link(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+}
+
+function markdown(text) {
+  const out = [];
+  const lines = text.replace(/\r/g, '').split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i];
+    if (l.startsWith('```')) {
+      const code = [];
+      while (++i < lines.length && !lines[i].startsWith('```')) code.push(lines[i]);
+      out.push(`<pre><code>${esc(code.join('\n'))}</code></pre>`);
+    } else if (/^\s*\|/.test(l)) {
+      const rows = [];
+      for (; i < lines.length && /^\s*\|/.test(lines[i]); i++) rows.push(lines[i]);
+      i--;
+      const cells = r => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const body = rows.filter(r => !/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      out.push(`<table>${body.map((r, n) => `<tr>${cells(r).map(c => n ? `<td>${inline(c)}</td>` : `<th>${inline(c)}</th>`).join('')}</tr>`).join('')}</table>`);
+    } else if (/^#{1,4} /.test(l)) {
+      const n = l.match(/^#+/)[0].length;
+      out.push(`<h${n}>${inline(l.slice(n + 1))}</h${n}>`);
+    } else if (/^\s*([-*]|\d+\.) /.test(l)) {
+      const items = [];
+      const list = /^\s*\d/.test(l) ? 'ol' : 'ul';
+      for (; i < lines.length && /^\s*([-*]|\d+\.) /.test(lines[i]); i++) items.push(lines[i].replace(/^\s*([-*]|\d+\.) /, ''));
+      i--;
+      out.push(`<${list}>${items.map(x => `<li>${inline(x)}</li>`).join('')}</${list}>`);
+    } else if (l.trim()) {
+      out.push(`<p>${inline(l)}</p>`);
+    }
+  }
+  return out.join('');
+}
+
+function proposalParts(body) {
+  const [head, ...diff] = String(body).split(/^## Diff\n/m);
+  const kv = [];
+  for (const line of head.split('\n')) {
+    const m = /^(\w+): ?(.*)/.exec(line);
+    if (m) kv.push([m[1], m[2]]);
+    else if (kv.length && line.trim()) kv.at(-1)[1] += ` ${line.trim()}`;
+  }
+  return { kv, diff: diff.join('') };
+}
+
+const diffLine = l => {
+  const k = /^(--- a\/|\+\+\+ b\/|--- \/dev\/null)/.test(l) ? 'file' : l.startsWith('@@') ? 'hunk' : l.startsWith('+') ? 'add' : l.startsWith('-') ? 'del' : 'ctx';
+  return `<div class="dl ${k}">${esc(l) || ' '}</div>`;
+};
+
+function proposalModal(p) {
+  const { kv, diff } = proposalParts(p.body);
+  const rows = kv.filter(([k]) => !['status', 'rung'].includes(k)).map(([k, v]) => `<div class="pkv"><b>${esc(k)}</b><p>${inline(v)}</p></div>`).join('');
+  return `<div class="pbox"><div class="phead"><h3>${esc(p.id)}. ${esc(p.title)}</h3><span class="meta">${esc(p.rung ?? '')} · ${ago(p.created_at)}</span><button class="btn" data-close style="margin-left:auto">Close</button></div>
+    <div class="pbody">${rows}${diff ? `<div class="pkv"><b>diff</b><div class="diff">${diff.trimEnd().split('\n').map(diffLine).join('')}</div></div>` : ''}</div>
+    <div class="acts">${btn(`/proposal/${p.id}/accept`, 'Accept', 'ok', `Accept proposal ${p.id}? A background session applies it and commits dotclaude.`)}${btn(`/proposal/${p.id}/decline`, 'Decline', 'bad', `Decline proposal ${p.id}? It is marked declined and not applied.`)}</div></div>`;
+}
+
+document.addEventListener('click', e => {
+  const card = e.target.closest('[data-proposal]');
+  const p = card && !e.target.closest('a, button') && S.proposals.find(x => String(x.id) === card.dataset.proposal);
+  if (p) {
+    const box = document.createElement('div');
+    box.id = 'pmodal';
+    box.innerHTML = proposalModal(p);
+    document.body.append(box);
+  } else if (e.target.id === 'pmodal' || e.target.closest('[data-close]')) document.getElementById('pmodal')?.remove();
+});
+
+function viewerHtml() {
+  const body = /\.md$/i.test(viewer.path) ? `<div class="md">${markdown(viewer.text)}</div>` : `<pre>${link(viewer.text)}</pre>`;
+  return `<div class="viewer"><div class="head" style="position:static"><h3 style="font-size:14px">${esc(viewer.path.split('/').slice(-2).join('/'))}</h3><a class="btn" href="${fileUrl(viewer.path)}" target="_blank" rel="noopener">raw ↗</a><button class="btn" data-unview="1">close file</button></div>${body}</div>`;
+}
+
+document.addEventListener('click', async e => {
+  const v = e.target.closest('[data-view]');
+  if (v) {
+    e.preventDefault();
+    if (/\.html?$/i.test(v.dataset.view)) return window.open(fileUrl(v.dataset.view), '_blank', 'noopener');
+    if (!detail) {
+      const slug = v.closest('[data-job]')?.dataset.job;
+      if (!slug) return window.open(fileUrl(v.dataset.view), '_blank', 'noopener');
+      await openDetail(slug);
+    }
+    const r = await fetch(fileUrl(v.dataset.view));
+    viewer = { path: v.dataset.view, text: r.ok ? await r.text() : `could not open: ${r.status}` };
+    document.getElementById('viewer-slot').innerHTML = viewerHtml();
+    document.getElementById('viewer-slot').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
+  if (e.target.closest('[data-unview]')) {
+    viewer = null;
+    document.getElementById('viewer-slot').innerHTML = '';
+  }
+});
+
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-img]');
+  if (a) {
+    e.preventDefault();
+    const box = document.createElement('div');
+    box.id = 'lightbox';
+    box.innerHTML = `<img src="${a.dataset.img}" alt="">`;
+    box.onclick = () => box.remove();
+    document.body.append(box);
+  }
+});
+
+document.addEventListener('toggle', e => {
+  const k = e.target.dataset?.k;
+  if (k) e.target.open ? openKeys.add(k) : openKeys.delete(k);
+}, true);
+
+let detail = null;
+let shown = '';
+let opener = null;
+let wide = (() => { try { return localStorage.getItem('f2wide') === '1'; } catch { return false; } })();
+
+async function openDetail(slug) {
+  if (slug !== detail) { viewer = null; shown = ''; }
+  if (!detail) opener = document.activeElement;
+  detail = slug;
+  const r = await fetch(`/job/${encodeURIComponent(slug)}`);
+  if (!r.ok || detail !== slug) return;
+  const text = await r.text();
+  if (text === shown) return;
+  const first = !shown;
+  shown = text;
+  renderDetail(JSON.parse(text));
+  if (first) document.getElementById('detail-close').focus();
+}
+
+function closeDetail() {
+  detail = null;
+  viewer = null;
+  shown = '';
+  document.getElementById('detail').className = '';
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  opener?.focus();
+}
+
+function route() {
+  const m = location.hash.match(/^#job\/(.+)$/);
+  if (m) openDetail(decodeURIComponent(m[1]));
+  else if (detail) closeDetail();
+}
+addEventListener('hashchange', route);
+
+const kidsOf = slug => S.jobs.filter(x => x.parent === slug);
+const kidsDone = slug => kidsOf(slug).filter(x => x.status === 'done').length;
+
+function projectBody(j) {
+  const kids = kidsOf(j.slug);
+  const slugs = new Set(kids.map(k => k.slug));
+  const prs = S.prs.filter(p => slugs.has(p.job));
+  return `<div class="bar"><i style="width:${kids.length ? Math.round(100 * kidsDone(j.slug) / kids.length) : 0}%"></i></div>
+    <section><h2>Brief</h2><pre>${link(j.brief)}</pre></section>
+    <section><h2>Jobs · ${kidsDone(j.slug)}/${kids.length} done</h2><table><tr><th>Job</th><th>Status</th><th>Phase</th><th>Doing</th><th>Done</th></tr>${kids.map(k => `<tr data-job="${esc(k.slug)}"><td>${jobLink(k.slug)}</td><td><span class="tag ${k.status === 'done' ? 'ok' : k.status === 'running' ? 'run' : ''}">${esc(k.status)}</span></td><td>${esc(k.phase)}</td><td>${esc(nowOf(k))}${needs(k).map(n => ` <span class="tag warn">${esc(n)}</span>`).join('')}</td><td>${esc(k.progress.wait ?? `${k.progress.pct}%`)}</td></tr>`).join('') || '<tr><td class="empty">none</td></tr>'}</table></section>
+    ${prs.length ? `<section><h2>PRs · ${prs.length}</h2><table>${prs.map(p => `<tr><td><a href="${esc(p.url)}" target="_blank">${esc(p.repo)}#${esc(p.number)}</a> <span class="meta">${esc(p.title ?? '')}</span></td><td>${esc(p.job)}</td><td>${esc(p.state)}</td><td>${ciTag(p.ci)}</td><td>${rev(p.review)}</td></tr>`).join('')}</table></section>` : ''}
+    ${fileList({ ...j, plan: [] })}
+    <section id="viewer-slot">${viewer ? viewerHtml() : ''}</section>`;
+}
+
+function renderDetail(j) {
+  const toneOf = t => /done|approved|accepted|delivered|clean|passed|merged|production|latest/.test(t) ? 'ok' : /fail|signal|regressed|error|conflict|closed|missing/.test(t) ? 'bad' : /gate|open|start|queued|changes|stopped|declined/.test(t) ? 'warn' : '';
+  const project = j.type === 'project';
+  document.getElementById('detail-box').innerHTML = `
+    <div class="head"><h3 id="detail-title">${esc(j.slug)}</h3>
+      <span class="tag">${esc(j.type)}</span><span class="tag ${j.status === 'done' ? 'ok' : 'run'}">${esc(j.status)}</span>
+      <span class="meta">${project ? `${kidsDone(j.slug)}/${kidsOf(j.slug).length} jobs done` : esc(j.progress.wait ?? `${j.progress.pct}% · now ${j.progress.step}`)} · ${j.lead ? (j.lead.closed_at ? 'lead missing' : `lead ${esc(j.lead.status)}`) : 'no lead'}</span>
+      ${needs(j).map(n => `<span class="tag warn">${esc(n)}</span>`).join('')}
+      ${herdrBtn(j)}<button class="btn" id="detail-wide">${wide ? 'narrow' : 'widen'}</button><button class="btn" id="detail-close" aria-label="Dismiss" title="Dismiss (Esc)">✕</button></div>
+    ${project ? projectBody(j) : `${j.progress.wait ? '' : `<div class="bar"><i style="width:${j.progress.pct}%"></i></div>`}
+    ${chips(j)}
+    <section><h2>Brief</h2><pre>${link(j.brief)}</pre></section>
+    ${j.progress.gate ? `<section><h2>Open gate: ${esc(j.progress.gate.name)}</h2><pre>${link(j.progress.gate.body)}</pre></section>` : ''}
+    ${j.prs.length ? `<section><h2>PRs</h2><table>${j.prs.map(p => `<tr><td><a href="${esc(p.url)}" target="_blank">${esc(p.repo)}#${esc(p.number)}</a> <span class="meta">${esc(p.title ?? '')}</span></td><td>${esc(p.state)}</td><td>${ciTag(p.ci)}</td><td>${rev(p.review)}</td><td>${p.latest_at ? `latest ${when(p.latest_at)}` : ''}</td><td>${p.production_at ? `production ${when(p.production_at)}` : ''}</td><td>${p.soak.map(t => `<span class="tag ${t.fired_at ? 'ok' : ''}">${esc(t.stage)} +${esc(t.checkpoint)}</span>`).join('')}</td></tr>`).join('')}</table></section>` : ''}
+    ${j.servers.length || j.tasks.length ? `<section><h2>Workspace</h2><div class="meta">${j.servers.map(s => `<a href="https://${esc(s.host)}" target="_blank">${esc(s.service)}</a> :${esc(s.port)} <span class="tag ${s.up ? 'ok' : ''}">${s.up ? 'up' : 'down'}</span>`).join(' ')} ${j.tasks.map(t => `<a href="https://app.productive.io/109-productive/tasks/${esc(t.task_id)}" target="_blank">task ${esc(t.task_id)}</a>`).join(' ')}</div></section>` : ''}
+    ${planTable(j)}
+    ${fileList(j)}
+    <section id="viewer-slot">${viewer ? viewerHtml() : ''}</section>
+    <section>${fold('history', `<h2>History · ${j.history.length}</h2>`, `<table class="ledger"><tr><th>When</th><th>What</th><th>Detail</th></tr>${j.history.map(l => `<tr><td>${when(l.ts)}</td><td><span class="tag ${toneOf(l.what)}">${esc(l.kind)}</span>${esc(l.what)}</td><td>${l.text ? `<pre>${link(l.text)}</pre>` : ''}</td></tr>`).join('')}</table>`)}</section>`}
+    ${['active', 'parked'].includes(j.workspace) ? `<section class="danger">${closeBtn(j.slug)}</section>` : ''}`;
+  const box = document.getElementById('detail');
+  box.className = `open${wide ? ' wide' : ''}`;
+  document.getElementById('detail-close').onclick = closeDetail;
+  document.getElementById('detail-wide').onclick = () => {
+    wide = !wide;
+    try { localStorage.setItem('f2wide', wide ? '1' : '0'); } catch {}
+    renderDetail(j);
+  };
+}
+
+document.getElementById('detail').addEventListener('click', e => { if (e.target.id === 'detail') closeDetail(); });
+document.addEventListener('keydown', e => {
+  const box = document.getElementById('lightbox') ?? document.getElementById('pmodal');
+  if (e.key === 'Escape') return box ? box.remove() : detail && closeDetail();
+  if (detail || box || e.metaKey || e.ctrlKey || e.altKey || document.activeElement?.closest('input, textarea')) return;
+  const t = TABS[Number(e.key) - 1];
+  if (t) setTab(t);
+});
+document.addEventListener('click', e => {
+  const card = e.target.closest('[data-job]');
+  if (card && !e.target.closest('a, button')) location.hash = `job/${encodeURIComponent(card.dataset.job)}`;
+});
+
+const views = {
+  Board() {
+    const jobs = S.jobs.filter(j => j.status === 'running' && j.type !== 'project');
+    const at = p => jobs.filter(j => j.phase === p);
+    const busy = PHASES.filter(p => at(p).length);
+    const idle = PHASES.filter(p => !at(p).length);
+    const wait = waiting();
+    return `${wait.length ? `<h2>Waiting on you</h2><div class="grid">${wait.map(a => `<div class="card" data-job="${esc(a.slug)}"><h4>${jobLink(a.slug)}</h4><div class="meta"><span class="tag warn">${esc(a.why)}</span>now ${esc(a.step)}</div>${a.gate ? `<pre>${link(a.gate.body)}</pre>` : ''}</div>`).join('')}</div><h2 style="margin-top:18px">Jobs</h2>` : ''}${busy.length ? `<div class="cols">${busy.map(p => `<div class="col"><h3>${p} · ${at(p).length}</h3>${at(p).map(jobCard).join('')}</div>`).join('')}</div>` : '<div class="empty">none</div>'}
+      ${idle.length ? `<div class="meta idle">empty: ${idle.join(' · ')}</div>` : ''}`;
+  },
+  Projects() {
+    const ps = S.jobs.filter(j => j.type === 'project' && j.status !== 'done');
+    return `<div class="grid">${ps.map(p => {
+      const kids = kidsOf(p.slug);
+      const running = kids.filter(k => k.status === 'running').length;
+      return `<div class="card" data-job="${esc(p.slug)}"><h4>${jobLink(p.slug)}</h4>
+        <div class="meta"><span class="tag ${p.status === 'running' ? 'run' : ''}">${esc(p.status)}</span>${kidsDone(p.slug)}/${kids.length} jobs done${running ? ` · ${running} running` : ''}</div>
+        <div class="bar"><i style="width:${kids.length ? Math.round(100 * kidsDone(p.slug) / kids.length) : 0}%"></i></div>
+        ${needs(p).map(n => `<span class="tag warn">${esc(n)}</span>`).join('')}</div>`;
+    }).join('') || '<div class="empty">none</div>'}</div>`;
+  },
+  Plate() {
+    return `<h2>Plate</h2><div class="grid">${S.plate.map(p => [p, jobOf(p.subject)]).map(([p, job]) => `<div class="card"${job ? ` data-job="${esc(job)}"` : ''}><h4>${link(p.subject ?? p.kind)}</h4><div class="meta"><span class="tag bad">${esc(p.kind)}</span>${ago(p.created_at)}${job ? ` · job ${esc(job)} ›` : ''}</div><pre>${link(p.text)}</pre><div class="acts">${p.kind === 'unregistered' ? `${btn(`/plate/${p.id}/adopt`, 'Create job', 'ok', `Start a work job that takes over ${p.subject}? It creates a workspace and its lead.`)}${btn(`/plate/${p.id}/ignore`, 'Ignore')}` : btn(`/plate/${p.id}/clear`, 'Clear')}${p.kind === 'soak-signal' ? btn(`/plate/${p.id}/rerun`, 'Rerun', 'ok', `Run this soak check on ${p.subject} again? This card clears; a new one appears if it is not clean.`) : ''}${p.kind === 'ready-to-close' ? closeBtn(p.subject) : ''}${p.kind === 'schedule-failed' ? runBtn(p.subject) : ''}</div></div>`).join('') || '<div class="empty">none</div>'}</div>
+      <h2 style="margin-top:18px">Proposals</h2><div class="grid">${S.proposals.map(p => `<div class="card" data-proposal="${esc(p.id)}"><h4>${esc(p.id)}. ${esc(p.title)}</h4><div class="meta">${esc(p.rung ?? '')} · ${ago(p.created_at)}</div><p>${inline(proposalParts(p.body).kv.find(([k]) => k === 'why')?.[1] ?? '')}</p><div class="acts">${btn(`/proposal/${p.id}/accept`, 'Accept', 'ok', `Accept proposal ${p.id}? A background session applies it and commits dotclaude.`)}${btn(`/proposal/${p.id}/decline`, 'Decline', 'bad', `Decline proposal ${p.id}? It is marked declined and not applied.`)}</div></div>`).join('') || '<div class="empty">none</div>'}</div>
+      <h2 style="margin-top:18px">Soaking</h2><div class="grid">${soaking().map(j => `<div class="card" data-job="${esc(j.slug)}"><h4>${jobLink(j.slug)}</h4><div class="meta">${soakNow(j)}</div></div>`).join('') || '<div class="empty">none</div>'}</div>`;
+  },
+  Numbers() {
+    const n = S.numbers;
+    const tok = x => x >= 1e6 ? `${(x / 1e6).toFixed(1)}M` : `${Math.round(x / 1000)}k`;
+    const kv = o => Object.entries(o).map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('') || '<tr><td class="empty">none</td></tr>';
+    const usage = [['5h', n.usage?.five_hour], ['7d', n.usage?.seven_day]].filter(([, w]) => w?.resets_at);
+    const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
+    const today = n.days[0].tokens;
+    const total = sum(today);
+    const across = m => n.days.reduce((x, d) => x + (d.tokens[m] ?? 0), 0);
+    const models = [...new Set(n.days.flatMap(d => Object.keys(d.tokens)))].sort((a, b) => across(b) - across(a));
+    const pct = x => x == null ? '' : `${Math.round(x)}%`;
+    const num = x => x ?? '';
+    return `<div class="grid">
+      <div class="card"><h2>Claude Code usage</h2>${usage.map(([l, w]) => `<div class="meta" style="margin-top:8px">${l} · <b>${Math.round(w.utilization)}%</b> · resets ${esc(when(Date.parse(w.resets_at)))}</div><div class="bar"><i style="width:${Math.min(100, w.utilization)}%;background:var(--${w.utilization >= 95 ? 'bad' : w.utilization >= 80 ? 'warn' : 'run'})"></i></div>`).join('') || '<div class="empty">not available</div>'}</div>
+      <div class="card"><h2>Tokens today · ${tok(total)}</h2><table>${Object.entries(today).sort((a, b) => b[1] - a[1]).map(([m, x]) => `<tr><td>${esc(m)}</td><td>${tok(x)}</td></tr>`).join('') || '<tr><td class="empty">none</td></tr>'}</table><div class="meta" style="margin-top:6px">input, output and cache writes; cache reads left out</div></div>
+      <div class="card"><h2>Jobs</h2><table>${kv(n.jobs)}</table></div>
+      <div class="card"><h2>PRs</h2><table>${kv(n.prs)}</table></div>
+      <div class="card"><h2>Ledger steps · last 7 days</h2><table><tr><th>Step</th><th>Done</th><th>Failed</th><th>Running</th><th>Skipped</th></tr>${n.steps.map(([e, s]) => `<tr><td>${esc(e)}</td><td>${s.done ?? ''}</td><td>${s.failed ?? ''}</td><td>${s.running ?? ''}</td><td>${s.skipped ?? ''}</td></tr>`).join('')}</table></div>
+      <div class="card"><h2>Soak checks · last 7 days</h2><table>${kv(n.soaks)}</table></div>
+    </div>
+    <h2 style="margin-top:18px">By day</h2><div class="card" style="overflow:auto"><table><tr><th>Day</th><th>Tokens</th>${models.map(m => `<th>${esc(m)}</th>`).join('')}<th>5h peak</th><th>7d</th><th>Jobs new</th><th>Jobs done</th><th>PRs merged</th><th>Steps done</th><th>Steps failed</th><th>Soak clean</th><th>Soak signal</th><th>Soak error</th></tr>
+      ${n.days.map(d => `<tr><td>${esc(d.day)}</td><td><b>${sum(d.tokens) ? tok(sum(d.tokens)) : ''}</b></td>${models.map(m => `<td>${d.tokens[m] ? tok(d.tokens[m]) : ''}</td>`).join('')}<td>${pct(d['usage.5h'])}</td><td>${pct(d['usage.7d'])}</td><td>${num(d.jobs.created)}</td><td>${num(d.jobs.done)}</td><td>${num(d.jobs.merged)}</td><td>${num(d.steps.done)}</td><td>${num(d.steps.failed)}</td><td>${num(d.soaks.clean)}</td><td>${num(d.soaks.signal)}</td><td>${num(d.soaks.error)}</td></tr>`).join('')}</table>
+      <div class="meta" style="margin-top:6px">Tokens are input, output and cache writes. 5h peak and 7d are sampled every 5 minutes from today on; earlier days have none.</div></div>`;
+  },
+  PRs() {
+    const rows = shownPrs();
+    const signal = (p, t) => ['soak.signal', 'soak.error'].includes(soakResult(p, t));
+    const soak = p => p.soak.map(t => `<div><span class="tag ${t.fired_at ? (soakResult(p, t) === 'soak.error' ? 'warn' : signal(p, t) ? 'bad' : 'ok') : ''}">${esc(t.stage)} +${esc(t.checkpoint)}</span>${signal(p, t) ? btn(`/soak/${t.id}/rerun`, 'rerun', '', `Run the ${t.stage} +${t.checkpoint} soak check on ${p.url} again?`) : ''}</div>`).join('');
+    const repos = [...new Set(S.prs.map(p => p.repo))].sort();
+    const bar = `<div class="acts" style="margin:0 0 10px">${Object.keys(PR_FILTERS).map(f => `<button class="btn${f === prsFilter ? ' on' : ''}" data-pf="${f}" aria-pressed="${f === prsFilter}">${f}</button>`).join('')}
+      <select id="prrepo" aria-label="Repo">${['', ...repos].map(r => `<option value="${esc(r)}"${r === prsRepo ? ' selected' : ''}>${esc(r || 'any repo')}</option>`).join('')}</select></div>`;
+    return `${bar}<table><tr><th>PR</th><th>Job</th><th>State</th><th>CI</th><th>Review</th><th>Latest</th><th>Production</th><th>Soak</th><th>Errors</th></tr>${rows.map(p => `<tr>
+      <td><a href="${esc(p.url)}" target="_blank">${esc(p.repo)}#${esc(p.number)}</a><div class="meta">${esc(p.title ?? '')}</div></td>
+      <td>${esc(p.job ?? 'unregistered')}</td><td>${esc(p.state)}${p.merge_ready && p.state === 'OPEN' ? ' <span class="tag ok">merge-ready</span>' : ''}</td><td>${ciTag(p.ci)}${p.ci_failures ? ` ×${p.ci_failures}` : ''}</td><td>${rev(p.review)}</td>
+      <td>${when(p.latest_at)}</td><td>${when(p.production_at)}</td><td>${soak(p)}</td>
+      <td>${p.errors.map(e => `<div><span class="tag ${e.data.strong || e.type === 'error.regressed' ? 'bad' : 'warn'}">${e.type === 'error.regressed' ? 'regressed' : e.data.strong ? 'strong' : 'weak'}</span>${esc(e.data.class)} <span class="meta">${esc(e.data.file ?? '')}:${esc(e.data.line ?? '')}</span></div>`).join('')}</td></tr>`).join('')}</table>`;
+  },
+  Jobs() {
+    const group = j => j.parent && S.jobs.some(x => x.slug === j.parent) ? j.parent : j.slug;
+    const jobs = shownJobs()
+      .sort((a, b) => group(a).localeCompare(group(b)) || (group(a) === a.slug ? -1 : group(b) === b.slug ? 1 : a.slug.localeCompare(b.slug)));
+    const bar = `<div class="acts" style="margin:0 0 10px">${['active', 'parked', 'closed', 'all'].map(f => `<button class="btn${f === jobsFilter ? ' on' : ''}" data-jf="${f}" aria-pressed="${f === jobsFilter}">${f}</button>`).join('')}</div>`;
+    return `${bar}<div class="card"><table><tr><th>Job</th><th>Type</th><th>Status</th><th>Doing</th><th>Done</th><th>Created</th></tr>${jobs.map(j => `<tr data-job="${esc(j.slug)}">
+      <td>${group(j) !== j.slug ? '<span class="meta">↳ </span>' : ''}${jobLink(j.slug)}${j.parent && group(j) === j.slug ? `<div class="meta">↳ ${esc(j.parent)}</div>` : ''}</td>
+      <td>${projectTag(j) || esc(j.type)}</td><td><span class="tag ${j.status === 'done' ? 'ok' : j.status === 'running' ? 'run' : ''}">${esc(j.status)}</span></td>
+      <td>${esc(nowOf(j))}${needs(j).map(n => ` <span class="tag warn">${esc(n)}</span>`).join('')}</td><td>${esc(j.progress.wait ?? `${j.progress.pct}%`)}</td><td class="meta">${when(j.created_at)}</td></tr>`).join('') || '<tr><td class="empty">none</td></tr>'}</table></div>`;
+  },
+  Parked() {
+    return S.parked.map(w => `<div class="card"><h4>${esc(w.slug)}</h4><div class="meta">parked · ${esc(w.path ?? '')}</div></div>`).join('') || '<div class="empty">none</div>';
+  },
+  Schedules() {
+    return `<div class="grid">${S.schedules.map(s => `<div class="card"><h4>${esc(s.name)} <span class="meta">${esc(s.cron)}</span></h4><div class="meta">${esc(s.action)} · last fired ${when(s.last_fired) || 'never'}</div><div class="acts">${runBtn(s.name)}</div>
+      ${s.runs.map(r => `<div style="margin-top:6px"><span class="tag ${r.ok ? 'ok' : 'bad'}">${r.ok ? 'ok' : 'failed'}</span><span class="meta">${when(r.ts)}</span><pre>${link(r.output.slice(-3000))}</pre></div>`).join('') || '<div class="empty">no runs yet</div>'}</div>`).join('')}</div>`;
+  },
+  Events() {
+    const rows = S.events.filter(e => !filter || `${e.type} ${e.subject} ${e.data}`.toLowerCase().includes(filter));
+    return `<input id="filter" placeholder="filter: type, subject, data" value="${esc(filter)}"><table id="events"><tr><th>#</th><th>When</th><th>Type</th><th>Subject</th><th>Data</th></tr>${rows.map(e => `<tr><td>${e.id}</td><td>${when(e.ts)}</td><td>${esc(e.type)}</td><td>${link(e.subject ?? '')}</td><td class="meta">${esc((e.data ?? '').slice(0, 300))}</td></tr>`).join('')}</table>`;
+  },
+};
+
+function render() {
+  if (!S) return;
+  nav();
+  const main = document.getElementById('main');
+  const focused = document.activeElement?.id === 'filter';
+  const html = views[tab]();
+  if (html !== render.last) main.innerHTML = render.last = html;
+  const f = document.getElementById('filter');
+  if (f) {
+    f.oninput = () => { filter = f.value.toLowerCase(); render(); };
+    if (focused) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+  }
+  const live = document.getElementById('live');
+  live.className = `live ${S.head === 'off' ? 'off' : ''}`;
+  live.querySelector('span').textContent = `${S.head} · updated ${new Date(S.at).toLocaleTimeString('sv')}`;
+}
+
+const source = new EventSource('/events');
+source.addEventListener('state', e => { const first = !S; S = JSON.parse(e.data); render(); if (first) route(); else if (detail) openDetail(detail); });
+source.onerror = () => {
+  const live = document.getElementById('live');
+  live.className = 'live off';
+  live.querySelector('span').textContent = `disconnected${S ? ` · last update ${new Date(S.at).toLocaleTimeString('sv')}` : ''}`;
+};
+</script>
+</body>
+</html>

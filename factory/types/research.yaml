@@ -1,0 +1,11 @@
+lead: loop
+model: opus
+effort: high
+steps:
+  - research-round
+  - artifact
+  - gate: {name: feedback, repeat: true}
+  - next-jobs
+done:
+  on: gate.decided
+  when: name == feedback and decision == accepted

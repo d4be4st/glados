@@ -1,0 +1,11 @@
+lead: loop
+model: sonnet
+effort: medium
+steps:
+  - plan
+  - coder: {tests: false}
+  - gate: {name: gate2}
+  - shipper
+  - pr
+done:
+  on: pr.merged

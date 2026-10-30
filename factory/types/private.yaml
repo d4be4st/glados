@@ -1,0 +1,12 @@
+lead: loop
+model: sonnet
+effort: medium
+steps:
+  - plan
+  - coder: {tests: false}
+  - tester: {optional: true}
+  - gate: {name: gate2}
+  - commit-on-main
+done:
+  on: job.step
+  when: element == commit-on-main and status == done

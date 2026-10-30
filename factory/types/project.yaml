@@ -1,0 +1,8 @@
+lead: loop
+model: opus
+effort: high
+steps:
+  - plan
+  - next-jobs: {repeat: true}
+done:
+  on: manual

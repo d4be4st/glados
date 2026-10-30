@@ -1,0 +1,11 @@
+lead: loop
+model: sonnet
+effort: medium
+steps:
+  - pr-review
+  - bugbot-review
+  - gate: {name: review}
+  - post-review
+done:
+  on: job.step
+  when: element == post-review and status == done

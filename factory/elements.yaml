@@ -1,0 +1,23 @@
+# The steps a job type may use. runs: who does it (a stage agent, the lead itself, or stef);
+# phase: the board column (previous = the column of the step before); weight: share of % done;
+# requires: elements that must come earlier; produces: events this element leads to besides job.step.
+triage: {runs: factory-triage, phase: plan, weight: 1}
+spec: {runs: factory-spec, phase: plan, weight: 1}
+spec-review: {runs: factory-spec-review, phase: plan, weight: 1, requires: [spec]}
+plan: {runs: factory-triage, phase: plan, weight: 1}
+coder: {runs: factory-coder, phase: build, weight: 3}
+spec-coder: {runs: factory-spec-coder, phase: build, weight: 6}
+review: {runs: [factory-review-spec, factory-review-standards, factory-review-cursor], phase: review, weight: 1, requires: [coder]}
+judge: {runs: factory-judge, phase: review, weight: 1, requires: [review]}
+tester: {runs: factory-tester, phase: test, weight: 2, requires: [coder]}
+gate: {runs: stef, phase: previous, weight: 1, produces: [gate.decided]}
+shipper: {runs: factory-shipper, phase: ship, weight: 1, requires: [coder|spec-coder], produces: [pr.merged, pr.closed, soak.clean]}
+pr: {runs: factory, phase: pr, weight: 1, requires: [shipper]}
+pr-review: {runs: worker-opus, phase: review, weight: 3}
+bugbot-review: {runs: worker-haiku, phase: review, weight: 2, requires: [pr-review]}
+post-review: {runs: worker-sonnet, phase: ship, weight: 1, requires: [pr-review]}
+commit-on-main:{runs: factory-shipper, phase: ship, weight: 1, requires: [coder]}
+research-round: {runs: lead, phase: plan, weight: 1}
+artifact: {runs: lead, phase: build, weight: 1}
+next-jobs: {runs: lead, phase: ship, weight: 1}
+watch: {runs: factory-watcher, phase: previous, weight: 1}
